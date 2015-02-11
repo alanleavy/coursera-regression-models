@@ -73,3 +73,45 @@ reg
 x <- c(0.8, 0.47, 0.51, 0.73, 0.36, 0.58, 0.57, 0.85, 0.44, 0.42)
 
 
+## Question 10
+## Let the slope having fit Y as the outcome and X as the predictor be denoted as β1. 
+## Let the slope from fitting X as the outcome and Y as the predictor be denoted as γ1. 
+## Suppose that you divide β1 by γ1; in other words consider β1/γ1. 
+## What is this ratio always equal to?
+
+# B1/γ1 == cor(X,Y) * sd(Y)/sd(X)  / cor(X,Y) *sd(X)/sd(Y)
+# B1/γ1 == sd(Y)/sd(X)  /sd(X)/sd(Y)  == sd(Y)*sd(Y)/sd(X)*sd(X) == Var(Y)/Var(X)
+
+##############
+## Experimentation
+X <- c(0.8, 0.47, 0.51, 0.73, 0.36, 0.58, 0.57, 0.85, 0.44, 0.42)
+Y <- c(1.39, 0.72, 1.55, 0.48, 1.19, -1.59, 1.23, -0.65, 1.49, 0.05)
+
+# Normalise x
+muX <- mean(X)
+sdX <- sd(X)
+centredX <- X-muX
+normX<- centredX / sdX
+
+# Normalise y
+muY <- mean(Y)
+sdY <- sd(Y)
+centredY <- Y-muY
+normY<- centredY / sdY
+
+regXtoY<-lm(Y~X)
+regYtoX<-lm(X~Y)
+
+df <- data.frame(X,Y,normX,normY)
+
+pXtoY <- ggplot(data=df)
+pXtoY <-pXtoY + geom_point(aes(x=X,y=Y))
+pXtoY <- pXtoY+ geom_abline(intercept = 1.567461, slope = -1.712846)
+pXtoY <- pXtoY+ geom_abline(intercept = 13.42890043, slope = -22.41343874)
+print(pXtoY)
+
+pYtoX <- ggplot(data=df)
+pYtoX <- pYtoX + geom_point(aes(x=Y,y=X))
+pYtoX <- pYtoX+ geom_abline(intercept = 0.59914503, slope = -0.04461609 )
+pYtoX <- pYtoX+ geom_abline(intercept = 0.915120799, slope = -0.583823648)
+print(pYtoX)
