@@ -1,0 +1,129 @@
+---
+title: "Regression Models - Course Project"
+output: pdf_document
+---
+```{r , eval=TRUE, echo=FALSE, results='hide', message=FALSE}
+require(car)
+require(lmtest)
+options(width=120)
+```
+## Executive Summary
+This report evaluates and attempts to quantify the impact of an automatic or manual transmission on a car's fuel efficiency (mpg). It is based on an analysis of the mtcars dataset, using multivariate regression.
+
+The findings of this analysis were as follows:
+
+* By itself, the type of transmission is not a good predictor of fuel efficiency.
+* Car weight (wt) and performance, as expressed by qsec, must also be taken into consideration.
+* For a given weight and qsec, we would exect a car with manual transmission to get between 0.04573 and 5.825944 more mpg than one with automatic transmission
+
+## Exploratory Data Analysis
+The mtcars data set is relatively small, having 32 observations of 11 measures, with each observation corresponding to a different model of car. See http://stat.ethz.ch/R-manual/R-devel/library/datasets/html/mtcars.html for a description of the dataset. The dataset is complete, with no N/As.
+
+Examining the correlation matrix for mtcars [Figure A1, in the appendix], we see that mpg is most strongly and negatively correlated with wt , cyl and disp . There is only moderate correlation between mpg and am,  the predictor of primary interest to us in this report.
+
+There is also a very strong correlation between cyl and disp, and am is most strongly correlated with wt. [Figure A2] shows a boxplot of wt Vs am
+
+Several transformations were applied to mtcars [Figure A3]. The transformed data frame was called mtcars1.
+```{r eval=TRUE, echo=F, results='hide', message=FALSE}
+
+mtcars1<-mtcars
+mtcars1$vs<-factor(mtcars$vs)
+mtcars1$am<-factor(mtcars$am)
+mtcars1$disp<-mtcars$disp-mean(mtcars$disp)
+mtcars1$hp<-mtcars$hp-mean(mtcars$hp)
+mtcars1$drat<-mtcars$drat-mean(mtcars$drat)
+mtcars1$wt<-mtcars$wt-mean(mtcars$wt)
+mtcars1$qsec<-mtcars$qsec-mean(mtcars$qsec)
+```
+
+## Model Selection
+The strategy adopted for model selection was to add predictors incrementally, comparing iterations for fit (adjusted R-squared), the significance of the predictors, the impact on variance and the distribution of residuals. The selection of individulal predictors was guided by a little knowledge of the domain and some basic Newtonian mechanics (e.g. F=m*a).
+
+
+On that basis, four initial models were selected for evaluation:
+```{r , eval=TRUE, echo=T, results='hide', message=FALSE}
+fit1 <- lm(mpg ~ am + wt, data=mtcars1)
+fit2 <- lm(mpg ~ am + wt + qsec, data=mtcars1)
+fit3 <- lm(mpg ~ am + wt + hp, data=mtcars1)
+fit4 <- lm(mpg ~ am + wt + qsec+hp, data=mtcars1)
+```
+
+Considering model fit, significance of predictors and variance inflation, fit2 looks like the best model. fit2 and fit4 have the highest Adjusted R-squared, but hp is not significant in fit4, which shows much higher variance inflataion than fit2. Some of these statistics are shown in [Figure A4]; Variance Inflation Factors have been ommitted for space considerations.
+
+A second set of models where then compared, each adding one of cyl, disp drat,vs,gear and carb to fit2. None of these models provided a better fit than fit2.
+
+A third set of models were compared, exploring interactions in the predictors of fit2. The one chosen, based on the criteria above was:
+```{r , eval=TRUE, echo=T, results='hide', message=FALSE}
+bestfit<-lm(mpg~wt+am:wt+qsec,data=mtcars1)
+```
+bestfit has an Adjusted R-squared of 0.8834 and all of its coefficeints are highly significant, with the maximum P value being 0.000209 for wt:am1. Some diagnostic plots were then created for bestfit [Figure A5]. The residuals do not show any strong pattern and are fairly normally distributed.
+
+## Conclusion
+Although we expect bestfit to provide better predictions of mpg than fit2, it is more difficult to interpret in terms of the research question. It maybe beneficial to interpret both models to see if they cast light on different aspects of the question. The coefficients of both models are:
+```{r eval=T, echo=T, results='markup', message=FALSE}
+summary(fit2)$coefficients; summary(bestfit)$coefficients;
+```
+
+95% confidence intervals were calculated for the coefficients of primary interest:
+```{r , eval=TRUE, echo=T, results='markup', message=FALSE}
+c(fit2.am1=qt(0.975, 28)*summary(fit2)$coefficients[2,2], bestfit.wtam1=qt(0.975, 28)*summary(bestfit)$coefficients[4,2])
+```
+
+* fit2 suggests that for a given weight and qsec, a car with a manual transmission will get between 0.04573 and 5.825944 more mpg than one with automatic transmission.
+* bestfit suggests that for a car of average weight and qsec, there is no difference between having a manual or automatic transmission. It also suggests that, for a given qsec, for each 1000lb above the average weight, manual cars will get between -6.595357 and 2.311071 less mpg than automatic cars, but that for each 1000lb below the average weight they will get the same amount more mpg than automatic cars.
+
+The interpretations of fit2 and bestfit seem somewhat at odds with each other. It is worth looking again at [a2]. In the mtcars dataset, automatic cars were 1358 lbs heavier than manual ones on average. Only one automatic car was below the average weight, while the majority of manual cars were. In the light of these facts, the interpretation of bestfit does not seem meaningful for this data set.
+
+------
+
+# Appendix
+
+## Figure A1 - mtcars correlation matrix
+```{r}
+cor(mtcars)
+```
+## Figure A2 - box plot of weight by transmission type
+```{r, fig.height=10, fig.width=10}
+par(mfrow=c(2,2));
+boxplot(mtcars$wt, xlab="All Cars", ylab="Weight")
+boxplot(wt~am,data=mtcars,xlab="Has Manual Transmission", ylab="Weight")
+```
+
+## Figure A3 - mtcars data transformations
+```{r eval=F, echo=T, results='hide', message=FALSE}
+
+mtcars1<-mtcars
+mtcars1$vs<-factor(mtcars$vs)
+mtcars1$am<-factor(mtcars$am)
+mtcars1$disp<-mtcars$disp-mean(mtcars$disp)
+mtcars1$hp<-mtcars$hp-mean(mtcars$hp)
+mtcars1$drat<-mtcars$drat-mean(mtcars$drat)
+mtcars1$wt<-mtcars$wt-mean(mtcars$wt)
+mtcars1$qsec<-mtcars$qsec-mean(mtcars$qsec)
+```
+
+## Figure A4 Statistics used to evaluate fits 1-4
+### Coefficient P Values
+```{r eval=T, echo=T, results='markup', message=FALSE}
+summary(fit1)$coefficients[,4]; summary(fit2)$coefficients[,4]; summary(fit3)$coefficients[,4];
+```
+### Adjusted R Squared
+```{r eval=T, echo=T, results='markup', message=FALSE} 
+summary(fit4)$coefficients[,4]
+c(summary(fit1)$adj.r.squared,summary(fit2)$adj.r.squared,summary(fit3)$adj.r.squared,summary(fit4)$adj.r.squared)
+```
+### Variance Inflation Factors
+```{r eval=T, echo=T, results='markup', message=FALSE} 
+vif(fit1);vif(fit2);vif(fit3);vif(fit4)
+```
+## Figure A5 - Diagnostic plots for bestfit
+
+```{r,fig.height=10, fig.width=10}
+par(mfrow=c(2,2)); plot(bestfit)
+```
+
+
+
+
+
+
